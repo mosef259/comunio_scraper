@@ -23,8 +23,8 @@ player_names = ["Victor", "Passi", "Mike", "fifty", "Lennard", "Darius", "Christ
 starting_balance = "20000000"
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Scrape transfer details from Comunio. Paste the HTML source of the comunnio dashboard into the \"html_content.txt\" file to extract new transfer details when running the script.")
-    parser.add_argument("--mode", type=str, required=False, default="default", help="Mode to run in. Use \"reset\" to reset all transfers and balances, use \"default\" to extract new transfers and calculate all players balances. ")
+    parser = argparse.ArgumentParser(description="Scrape transfer details from Comunio. Paste the HTML source of the comunnio dashboard into the \"news_html.txt\" file to extract new transfer details when running the script. Paste the HTML source of the standings page into the \"standings_html_txt\" file.")
+    parser.add_argument("--mode", type=str, required=False, default="default", help="Set the mode to run. Use \"reset\" to reset all transfers and balances, use \"default\" to extract new transfers and calculate all players balances. ")
     #parser.add_argument("--csv", type=str, required=False, help="The output CSV file name.")
     return parser.parse_args()
 
