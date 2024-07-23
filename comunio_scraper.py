@@ -7,50 +7,51 @@ from datetime import datetime
 from bs4 import BeautifulSoup
 
 url = "https://www.comunio.de/dashboard"
-access_token = '64ad8047cbcb67d39d1e29782c92cf680f280efb'
+access_token = "64ad8047cbcb67d39d1e29782c92cf680f280efb"
 headers = {
-    'Authorization': access_token,
+    "Authorization": access_token,
 }
 
-html_file_path = "html_content.txt"
+news_file_path = "news_html.txt"
+standings_file_path = "standings_html.txt"
 transfers_file_path = "transfers.csv"
 balance_file_path = "balances.csv"
 
-latest_date = datetime.strptime("7/22/24", '%m/%d/%y')
+latest_date = datetime.strptime("7/22/24", "%m/%d/%y")
 
 player_names = ["Victor", "Passi", "Mike", "fifty", "Lennard", "Darius", "Christian", "Johannes", "Rouven", "Tennef", "Moritz"]
 starting_balance = "20000000"
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Scrape transfer details from Comunio. Paste the HTML source of the comunnio dashboard into the \"html_content.txt\" file to extract new transfer details when running the script.')
-    parser.add_argument('--mode', type=str, required=False, default="default", help='Mode to run in. Use \"reset\" to reset all transfers and balances, use \"default\" to extract new transfers and calculate all players balances. ')
-    #parser.add_argument('--csv', type=str, required=False, help='The output CSV file name.')
+    parser = argparse.ArgumentParser(description="Scrape transfer details from Comunio. Paste the HTML source of the comunnio dashboard into the \"html_content.txt\" file to extract new transfer details when running the script.")
+    parser.add_argument("--mode", type=str, required=False, default="default", help="Mode to run in. Use \"reset\" to reset all transfers and balances, use \"default\" to extract new transfers and calculate all players balances. ")
+    #parser.add_argument("--csv", type=str, required=False, help="The output CSV file name.")
     return parser.parse_args()
 
-def extract_transfers(html_file_path):
-    with open(html_file_path, 'r') as file:
+def extract_transfers(news_file_path):
+    with open(news_file_path, "r") as file:
         html_content = file.read()
 
-    soup = BeautifulSoup(html_content, 'html.parser')
+    soup = BeautifulSoup(html_content, "html.parser")
     transfers = []
 
 
-    print("Beginning extraction...")
-    for daily_news_body in soup.find_all("div", class_='news_body_per_day animatable fold-animation'):
-        for transfer_container in daily_news_body("div", attrs={"ng-if": "entry.type === 'TRANSACTION_TRANSFER'"}):
-            for transfer in transfer_container('span', attrs={"translate": ""}):
+    print("Extracting transfers...")
+    for daily_news_body in soup.find_all("div", class_="news_body_per_day animatable fold-animation"):
+        for transfer_container in daily_news_body("div", attrs={"ng-if": "entry.type === TRANSACTION_TRANSFER"}):
+            for transfer in transfer_container("span", attrs={"translate": ""}):
                 try:
-                    player_tag = transfer.find('a', href=re.compile(r'/bundesliga/players/'))
+                    player_tag = transfer.find("a", href=re.compile(r"/bundesliga/players/"))
                     player_name = player_tag.text if player_tag else None
 
                     text = transfer.get_text()
-                    amount_match = re.search(r'transfers for ([\d,]+)', text)
+                    amount_match = re.search(r"transfers for ([\d,]+)", text)
                     amount = amount_match.group(1).replace(",", "") if amount_match else None
 
                     news_date = daily_news_body.find("div", class_="news_body_left news_date").text
 
-                    from_computer_match = re.search(r'from (\w+)', text)
-                    to_computer_match = re.search(r'to (\w+)', text)
+                    from_computer_match = re.search(r"from (\w+)", text)
+                    to_computer_match = re.search(r"to (\w+)", text)
 
                     if from_computer_match:
                         source_name = from_computer_match.group(1) if from_computer_match else None
@@ -62,44 +63,43 @@ def extract_transfers(html_file_path):
                     else:
                         target_name = None
 
-                    if 'Computer' in [source_name, target_name]:
-                        if source_name == 'Computer':
+                    if "Computer" in [source_name, target_name]:
+                        if source_name == "Computer":
                             source_name = None
-                        if target_name == 'Computer':
+                        if target_name == "Computer":
                             target_name = None
 
                     if (player_name != None):
                         transfers.append({
                                 "Date": news_date,
-                                'Source_Name': source_name,
+                                "Source_Name": source_name,
                                 "Target_Name": target_name,
-                                'Amount': amount,
-                                'Player_Name': player_name
+                                "Amount": amount,
+                                "Player_Name": player_name
                         })
                         
                 except AttributeError:
                     continue
 
 
-    transfers.sort(key=lambda x: parse_date(x['Date']))
+    transfers.sort(key=lambda x: parse_date(x["Date"]))
     return transfers
 
-def write_csv(transfers_file_path, balance_file_path, transfers):
+def write_csv(transfers_file_path, balance_file_path, latest_date, transfers, team_values):
     try:
-        with open(transfers_file_path, mode='r') as csvfile:
+        with open(transfers_file_path, mode="r") as csvfile:
             reader = csv.DictReader(csvfile)
             last_row = None
             for row in reader:
                 last_row = row
             if last_row:
-                latest_date = datetime.strptime(last_row['Date'], '%m/%d/%y ')
-            else:
-                latest_date = None
+                latest_date = datetime.strptime(last_row["Date"], "%m/%d/%y ")
+
     except FileNotFoundError as e:
         print(e)
         return None
 
-    new_transfers = [t for t in transfers if datetime.strptime(t['Date'], '%m/%d/%y ') > latest_date] if latest_date else transfers
+    new_transfers = [t for t in transfers if datetime.strptime(t["Date"], "%m/%d/%y ") > latest_date] if latest_date else transfers
     print(f"New transfers since {latest_date}:")
     if new_transfers:
         for t in new_transfers:
@@ -107,8 +107,8 @@ def write_csv(transfers_file_path, balance_file_path, transfers):
     else:
         print("None.")
 
-    with open(transfers_file_path, mode='a', newline='') as csvfile:
-        fieldnames = ['Date', 'Source_Name', 'Target_Name', 'Amount', 'Player_Name']
+    with open(transfers_file_path, mode="a", newline="") as csvfile:
+        fieldnames = ["Date", "Source_Name", "Target_Name", "Amount", "Player_Name"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         if latest_date is None:
             writer.writeheader()
@@ -129,19 +129,52 @@ def write_csv(transfers_file_path, balance_file_path, transfers):
             elif (nt["Target_Name"] == b["Name"]):
                 new_balance = int(b["Balance"]) - int(nt["Amount"].replace(",", ""))
                 b["Balance"] = new_balance
+        for tv in team_values:
+            if (b["Name"] == tv["Name"]):
+                b["Team value"] = tv["Team value"]
+
+        b["Max. offer"] = int(b["Balance"]) + int(int(b["Team value"]) / 2)
 
     print(f"New Balances:\n{balances}")
     with open(balance_file_path, mode="w", newline="") as csvfile:
-        fieldnames = ["Name", "Balance"]
+        fieldnames = ["Name", "Balance", "Team value", "Max. offer"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for b in balances:
             writer.writerow(b)
 
+def extract_team_values(standings_file_path):
+    with open(standings_file_path, "r") as file:
+        html_content = file.read()
+
+    soup = BeautifulSoup(html_content, "html.parser")
+    team_values = []
+
+    print("Extracting team values...")
+    for click_area in soup.find_all("div", class_="click-and-hover-area"):
+        try:
+            human_tag = click_area.find("div", class_="name text-to-slide whitespace_nowrap")
+            human_name = human_tag.text.split()[0]
+
+            value_tag = click_area.find("div", class_="teamvalue text_oswald text_align_right")
+            value = value_tag.text.replace(",","")
+
+            team_values.append({
+                "Name": human_name,
+                "Team value": value
+            })
+
+        except Exception as e:
+            print(e)
+    
+    #print(team_values)
+    return team_values
+                                
+
 def reset_balances(balance_file_path):
-    balances = [{"Name": name, "Balance":starting_balance} for name in player_names]
+    balances = [{"Name": name, "Balance": starting_balance, "Team value": "0", "Max. offer": "0"} for name in player_names]
     with open(balance_file_path, mode="w", newline="") as csvfile:
-        fieldnames = ["Name", "Balance"]
+        fieldnames = ["Name", "Balance", "Team value", "Max. offer"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for b in balances:
@@ -151,12 +184,12 @@ def reset_transfers(transfers_file_path):
     if os.path.exists(transfers_file_path):
         os.remove(transfers_file_path)
 
-    with open(transfers_file_path, 'w') as file:
+    with open(transfers_file_path, "w") as file:
         pass
 
 
 def parse_date(date_str):
-    return datetime.strptime(date_str.strip(), '%m/%d/%y')
+    return datetime.strptime(date_str.strip(), "%m/%d/%y")
 
 def get_html():
     #response = requests.get(url, headers=headers)
@@ -171,13 +204,14 @@ def main():
     mode = args.mode
 
     if mode == "default":
-        transfers = extract_transfers(html_file_path)
-        write_csv(transfers_file_path, balance_file_path, transfers)
+        transfers = extract_transfers(news_file_path)
+        team_values = extract_team_values(standings_file_path)
+        write_csv(transfers_file_path, balance_file_path, latest_date, transfers, team_values)
     elif mode == "reset":
         print("Resetting everything.")
         reset_balances(balance_file_path)
         reset_transfers(transfers_file_path)
 
     
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
