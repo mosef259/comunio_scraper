@@ -16,14 +16,14 @@ html_file_path = "html_content.txt"
 transfers_file_path = "transfers.csv"
 balance_file_path = "balances.csv"
 
-latest_date = datetime.strptime("7/7/24", '%m/%d/%y')
+latest_date = datetime.strptime("7/22/24", '%m/%d/%y')
 
 player_names = ["Victor", "Passi", "Mike", "fifty", "Lennard", "Darius", "Christian", "Johannes", "Rouven", "Tennef", "Moritz"]
 starting_balance = "20000000"
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description='Scrape transfer details from Comunio.')
-    parser.add_argument('--mode', type=str, required=False, default="default", help='Mode to run in. \"reset\" to reset all transfers and balances')
+    parser = argparse.ArgumentParser(description='Scrape transfer details from Comunio. Paste the HTML source of the comunnio dashboard into the \"html_content.txt\" file to extract new transfer details when running the script.')
+    parser.add_argument('--mode', type=str, required=False, default="default", help='Mode to run in. Use \"reset\" to reset all transfers and balances, use \"default\" to extract new transfers and calculate all players balances. ')
     #parser.add_argument('--csv', type=str, required=False, help='The output CSV file name.')
     return parser.parse_args()
 
