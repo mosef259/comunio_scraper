@@ -1,12 +1,12 @@
-Name,Balance
-Victor,22467800
-Passi,-64
-Mike,20000000
-fifty,20000000
-Lennard,20000000
-Darius,20000000
-Christian,20000000
-Johannes,20000000
-Rouven,20000000
-Tennef,20000000
-Moritz,20000000
+Name,Balance,Team value,Max. offer
+Victor,20000000,0,0
+Passi,20000000,0,0
+Mike,20000000,0,0
+fifty,20000000,0,0
+Lennard,20000000,0,0
+Darius,20000000,0,0
+Christian,20000000,0,0
+Johannes,20000000,0,0
+Rouven,20000000,0,0
+Tennef,20000000,0,0
+Moritz,20000000,0,0
