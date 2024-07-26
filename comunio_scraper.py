@@ -3,7 +3,7 @@ import argparse
 import re
 import csv
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 from bs4 import BeautifulSoup
 
 news_file_path = "news_html.txt"
@@ -37,47 +37,117 @@ def extract_news(news_file_path):
     print("Extracting transfers...")
     for daily_news_body in soup.find_all("div", class_="news_body_per_day animatable fold-animation"):
         for transfer_container in daily_news_body("div", attrs={"ng-if": "entry.type === 'TRANSACTION_TRANSFER'"}):
-            for transfer in transfer_container("span", attrs={"translate": ""}):
-                try:
-                    player_tag = transfer.find("a", href=re.compile(r"/bundesliga/players/"))
-                    player_name = player_tag.text if player_tag else None
+            for from_computer_transfer in transfer_container("div", attrs={"ng-if": "entry.message.FROM_COMPUTER.length > 0"}):
+                for transfer in from_computer_transfer("span", attrs={"translate": ""}):
+                    try:
+                        player_tag = transfer.find("a", href=re.compile(r"/bundesliga/players/"))
+                        player_name = player_tag.text if player_tag else None
 
-                    text = transfer.get_text()
-                    amount_match = re.search(r"transfers for ([\d,]+)", text)
-                    amount = amount_match.group(1).replace(",", "") if amount_match else None
+                        text = transfer.get_text()
+                        amount_match = re.search(r"transfers for ([\d,]+)", text)
+                        amount = amount_match.group(1).replace(",", "") if amount_match else None
 
-                    news_date = daily_news_body.find("div", class_="news_body_left news_date").text
+                        news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
+                        news_time = datetime.strptime("5:00", "%H:%M")
+                        #print(f"Before:{news_date}.")
+                        if ("Today" in news_date):
+                            news_date = datetime.now()
+                        elif ("Yesterday" in news_date):
+                            news_date = (datetime.now() - timedelta(days=1))
+                        else:
+                            news_date = datetime.strptime(news_date, "%m/%d/%y")
+                        news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
+                        #print(f"After:{news_date}")
 
-                    from_computer_match = re.search(r"from (\w+)", text)
-                    to_computer_match = re.search(r"to (\w+)", text)
+                        source_name = re.search(r"from (\w+)", text).group(1)
+                        target_name = re.search(r"to (\w+)", text).group(1)
 
-                    if from_computer_match:
-                        source_name = from_computer_match.group(1) if from_computer_match else None
-                    else:
-                        source_name = None
+                        if (player_name != None):
+                            transfers.append({
+                                    "Date": news_date,
+                                    "Source_Name": source_name,
+                                    "Target_Name": target_name,
+                                    "Amount": amount,
+                                    "Player_Name": player_name
+                            })
+                    except Exception as e:
+                        print(e)
+            for to_computer_transfer in transfer_container("div", attrs={"ng-if": "entry.message.TO_COMPUTER.length > 0"}):
+                for transfer in to_computer_transfer("p", attrs={"ng-repeat": "transfer in entry.message.TO_COMPUTER"}):
+                    try:
+                        player_tag = transfer.find("a", href=re.compile(r"/bundesliga/players/"))
+                        player_name = player_tag.text if player_tag else None
 
-                    if to_computer_match:
-                        target_name = to_computer_match.group(1) if to_computer_match else None
-                    else:
-                        target_name = None
+                        text = transfer.get_text()
+                        amount_match = re.search(r"transfers for ([\d,]+)", text)
+                        amount = amount_match.group(1).replace(",", "") if amount_match else None
 
-                    if "Computer" in [source_name, target_name]:
-                        if source_name == "Computer":
-                            source_name = None
-                        if target_name == "Computer":
-                            target_name = None
+                        news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
+                        news_time = transfer.find("span", attrs={"ng-if": "transfer.immediateTransferTime"}).text.split("-")[0].strip()
+                        news_time = datetime.strptime(news_time, "%H:%M")
+                        print(f"news time:{news_time}.")
+                        #print(f"Before:{news_date}.")
+                        if ("Today" in news_date):
+                            news_date = datetime.now()
+                        elif ("Yesterday" in news_date):
+                            news_date = (datetime.now() - timedelta(days=1))
+                        else:
+                            news_date = datetime.strptime(news_date, "%m/%d/%y")
+                        news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
+                        print(f"After:{news_date}")
 
-                    if (player_name != None):
-                        transfers.append({
-                                "Date": news_date,
-                                "Source_Name": source_name,
-                                "Target_Name": target_name,
-                                "Amount": amount,
-                                "Player_Name": player_name
-                        })
-                except AttributeError:
-                    continue
+                        source_name = re.search(r"from (\w+)", text).group(1)
+                        target_name = re.search(r"to (\w+)", text).group(1)
 
+                        if (player_name != None):
+                            transfers.append({
+                                    "Date": news_date,
+                                    "Source_Name": source_name,
+                                    "Target_Name": target_name,
+                                    "Amount": amount,
+                                    "Player_Name": player_name
+                            })
+                    except Exception as e:
+                        print(e)
+            for between_players_transfer in transfer_container("div", attrs={"ng-if": "entry.message.BETWEEN_USERS.length > 0"}):
+                for transfer in between_players_transfer("p", attrs={"ng-repeat": "transfer in entry.message.BETWEEN_USERS"}):    
+                    try:
+                        player_tag = transfer.find("a", href=re.compile(r"/bundesliga/players/"))
+                        player_name = player_tag.text if player_tag else None
+
+                        text = transfer.get_text()
+                        amount_match = re.search(r"transfers for ([\d,]+)", text)
+                        amount = amount_match.group(1).replace(",", "") if amount_match else None
+
+                        news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
+                        news_time = transfer.find("span", attrs={"ng-if": "transfer.immediateTransferTime"}).text.split("-")[0].strip()
+                        news_time = datetime.strptime(news_time, "%H:%M")
+                        print(f"news time:{news_time}.")
+                        #print(f"Before:{news_date}.")
+                        if ("Today" in news_date):
+                            news_date = datetime.now()
+                        elif ("Yesterday" in news_date):
+                            news_date = (datetime.now() - timedelta(days=1))
+                        else:
+                            news_date = datetime.strptime(news_date, "%m/%d/%y")
+                        news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
+                        print(f"After:{news_date}")
+
+                        source_name = re.search(r"from (\w+)", text).group(1)
+                        target_name = re.search(r"to (\w+)", text).group(1)
+
+                        if (player_name != None):
+                            transfers.append({
+                                    "Date": news_date,
+                                    "Source_Name": source_name,
+                                    "Target_Name": target_name,
+                                    "Amount": amount,
+                                    "Player_Name": player_name
+                            })
+                    except Exception as e:
+                        print(e)
+
+        # extract boni
         for single_news_cont in daily_news_body("div", class_="single_news_container"):
             news_date = daily_news_body.find("div", class_="news_body_left news_date").text
 
@@ -110,7 +180,7 @@ def write_csv(transfers_file_path, balance_file_path, boni_file_path, latest_dat
             for row in reader:
                 last_row = row
             if last_row:
-                latest_date = datetime.strptime(last_row["Date"], "%m/%d/%y ")
+                latest_date = datetime.strptime(last_row["Date"], "%m/%d/%y %H:%M")
     except FileNotFoundError as e:
         print(e)
 
@@ -121,12 +191,12 @@ def write_csv(transfers_file_path, balance_file_path, boni_file_path, latest_dat
             for row in reader:
                 last_row = row
             if last_row:
-                latest_bonus = datetime.strptime(last_row["Date"], "%m/%d/%y ")
+                latest_bonus = datetime.strptime(last_row["Date"], "%m/%d/%y")
     except FileNotFoundError as e:
         print(e)
 
-    new_transfers = [t for t in transfers if datetime.strptime(t["Date"], "%m/%d/%y ") > latest_date] if latest_date else transfers
-    new_boni = [b for b in boni if datetime.strptime(b["Date"], "%m/%d/%y ") > latest_bonus] if latest_bonus else boni
+    new_transfers = [t for t in transfers if datetime.strptime(t["Date"], "%m/%d/%y %H:%M") > latest_date] if latest_date else transfers
+    new_boni = [b for b in boni if datetime.strptime(b["Date"], "%m/%d/%y") > latest_bonus] if latest_bonus else boni
     print(f"New transfers since {latest_date}:")
     if new_transfers:
         for t in new_transfers:
@@ -252,7 +322,7 @@ def reset_boni(boni_file_path):
 
 
 def parse_date(date_str):
-    return datetime.strptime(date_str.strip(), "%m/%d/%y")
+    return datetime.strptime(date_str.strip(), "%m/%d/%y %H:%M")
 
 def get_html():
     #response = requests.get(url, headers=headers)
