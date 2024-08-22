@@ -13,8 +13,8 @@ balance_file_path = "balances.csv"
 boni_file_path = "boni.csv"
 
 #latest_date = datetime.strptime("7/22/24", "%m/%d/%y")
-latest_date = datetime.strptime("1/1/24", "%m/%d/%y")
-latest_bonus = datetime.strptime("1/1/24", "%m/%d/%y")
+latest_date = datetime.strptime("7/20/24", "%m/%d/%y")
+latest_bonus = datetime.strptime("7/20/24", "%m/%d/%y")
 
 player_names = ["Victor", "Passi", "Mike", "fifty", "Lennard", "Darius", "Christian", "Johannes", "Rouven", "Tennef", "Moritz"]
 starting_balance = "20000000"
@@ -49,7 +49,6 @@ def extract_news(news_file_path):
 
                         news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
                         news_time = datetime.strptime("5:00", "%H:%M")
-                        #print(f"Before:{news_date}.")
                         if ("Today" in news_date):
                             news_date = datetime.now()
                         elif ("Yesterday" in news_date):
@@ -57,7 +56,6 @@ def extract_news(news_file_path):
                         else:
                             news_date = datetime.strptime(news_date, "%m/%d/%y")
                         news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
-                        #print(f"After:{news_date}")
 
                         source_name = re.search(r"from (\w+)", text).group(1)
                         target_name = re.search(r"to (\w+)", text).group(1)
@@ -85,8 +83,6 @@ def extract_news(news_file_path):
                         news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
                         news_time = transfer.find("span", attrs={"ng-if": "transfer.immediateTransferTime"}).text.split("-")[0].strip()
                         news_time = datetime.strptime(news_time, "%H:%M")
-                        print(f"news time:{news_time}.")
-                        #print(f"Before:{news_date}.")
                         if ("Today" in news_date):
                             news_date = datetime.now()
                         elif ("Yesterday" in news_date):
@@ -94,7 +90,6 @@ def extract_news(news_file_path):
                         else:
                             news_date = datetime.strptime(news_date, "%m/%d/%y")
                         news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
-                        print(f"After:{news_date}")
 
                         source_name = re.search(r"from (\w+)", text).group(1)
                         target_name = re.search(r"to (\w+)", text).group(1)
@@ -122,8 +117,6 @@ def extract_news(news_file_path):
                         news_date = daily_news_body.find("div", class_="news_body_left news_date").text.strip()
                         news_time = transfer.find("span", attrs={"ng-if": "transfer.immediateTransferTime"}).text.split("-")[0].strip()
                         news_time = datetime.strptime(news_time, "%H:%M")
-                        print(f"news time:{news_time}.")
-                        #print(f"Before:{news_date}.")
                         if ("Today" in news_date):
                             news_date = datetime.now()
                         elif ("Yesterday" in news_date):
@@ -131,7 +124,6 @@ def extract_news(news_file_path):
                         else:
                             news_date = datetime.strptime(news_date, "%m/%d/%y")
                         news_date = datetime.combine(news_date.date(), news_time.time()).strftime('%-m/%-d/%y %H:%M')
-                        print(f"After:{news_date}")
 
                         source_name = re.search(r"from (\w+)", text).group(1)
                         target_name = re.search(r"to (\w+)", text).group(1)
