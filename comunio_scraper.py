@@ -1,4 +1,3 @@
-import requests
 import argparse
 import re
 import csv
