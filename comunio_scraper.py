@@ -237,6 +237,12 @@ def write_csv(transfers_file_path, balance_file_path, boni_file_path, latest_dat
         for tv in team_values:
             if (b["Name"] == tv["Name"]):
                 b["Team value"] = tv["Team value"]
+                if (int(b["Points"]) < int(tv["Points"])):
+                    point_diff = (int(tv["Points"]) - int(b["Points"]))
+                    point_bonus =  point_diff * 10000
+                    print(f"Player {b['Name']} scored {point_diff} points since last run of the script. Adding {point_bonus} to their balance.")
+                    b["Balance"] = int(b["Balance"]) + point_bonus
+                    b["Points"] = tv["Points"]
         for bonus in new_boni:
             if (b["Name"] == bonus["Name"]):
                 new_balance = int(b["Balance"]) + int(bonus["Amount"])
@@ -250,7 +256,7 @@ def write_csv(transfers_file_path, balance_file_path, boni_file_path, latest_dat
         print(b)
 
     with open(balance_file_path, mode="w", newline="") as csvfile:
-        fieldnames = ["Name", "Balance", "Team value", "Max. offer"]
+        fieldnames = ["Name", "Balance", "Team value", "Points", "Max. offer"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for b in balances:
@@ -272,9 +278,13 @@ def extract_team_values(standings_file_path):
             value_tag = click_area.find("div", class_="teamvalue text_oswald text_align_right")
             value = value_tag.text.replace(",","")
 
+            points_tag = click_area.find("span", title="total points")
+            points = int(points_tag.text.strip())
+
             team_values.append({
                 "Name": human_name,
-                "Team value": value
+                "Team value": value,
+                "Points": points,
             })
 
         except Exception as e:
@@ -285,9 +295,9 @@ def extract_team_values(standings_file_path):
                                 
 
 def reset_balances(balance_file_path):
-    balances = [{"Name": name, "Balance": starting_balance, "Team value": "0", "Max. offer": "0"} for name in player_names]
+    balances = [{"Name": name, "Balance": starting_balance, "Team value": "0", "Points": "0", "Max. offer": "0"} for name in player_names]
     with open(balance_file_path, mode="w", newline="") as csvfile:
-        fieldnames = ["Name", "Balance", "Team value", "Max. offer"]
+        fieldnames = ["Name", "Balance", "Team value", "Points", "Max. offer"]
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
         for b in balances:
